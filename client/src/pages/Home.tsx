@@ -1,33 +1,66 @@
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useMemo, useState } from "react";
+import { Link } from "wouter";
+import { CalendarDays, ChevronRight, Clock3, Heart, MapPin, Menu, Search, ShieldCheck, Sparkles, Ticket, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
+const events = [
+  { id: 1, title: "Abidjan Music Live", category: "Concert", date: "14 sept. 2026", day: "14", month: "SEP", time: "19:00", venue: "Palais de la Culture", price: "5 000 F", color: "from-[#32126a] via-[#7146c9] to-[#b68cff]", icon: "♫", description: "Une soirée de musique et d’énergie au cœur de la ville." },
+  { id: 2, title: "Festival des Talents", category: "Festival", date: "28 sept. 2026", day: "28", month: "SEP", time: "16:30", venue: "Parc des Expositions", price: "3 000 F", color: "from-[#922d65] via-[#e65c70] to-[#ffbf70]", icon: "✦", description: "La scène ivoirienne se retrouve pour un grand spectacle." },
+  { id: 3, title: "Les Nuits d’Abidjan", category: "Expérience", date: "05 oct. 2026", day: "05", month: "OCT", time: "20:00", venue: "Cocody, Abidjan", price: "7 500 F", color: "from-[#0c5362] via-[#1e9b9a] to-[#9be1cc]", icon: "◒", description: "Une expérience immersive entre musique, danse et lumière." },
+  { id: 4, title: "Stand-up au bord de la lagune", category: "Spectacle", date: "11 oct. 2026", day: "11", month: "OCT", time: "18:00", venue: "Maison de la Culture", price: "4 000 F", color: "from-[#4d267a] via-[#c34da0] to-[#f8b4d9]", icon: "笑", description: "Les meilleurs talents de l’humour réunis sur une même scène." },
+  { id: 5, title: "Design & Culture Market", category: "Marché", date: "18 oct. 2026", day: "18", month: "OCT", time: "10:00", venue: "Zone 4, Abidjan", price: "2 500 F", color: "from-[#174c3b] via-[#58a66e] to-[#d4dd75]", icon: "✳", description: "Créateurs, artisans et musiciens pour une journée inspirante." },
+  { id: 6, title: "Classics Orchestra", category: "Concert", date: "25 oct. 2026", day: "25", month: "OCT", time: "19:30", venue: "Institut Français", price: "10 000 F", color: "from-[#1e315e] via-[#4276c3] to-[#8dd9f2]", icon: "𝄞", description: "Un voyage orchestral entre grands classiques et créations modernes." },
+];
+
+const categories = ["Tous", "Concert", "Festival", "Spectacle", "Expérience", "Marché"];
+
 export default function Home() {
-  // The useAuth hook provides authentication state.
-  // To implement login/logout, call logout(), or start login from an event
-  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
-  // startLogin() during render (no href={startLogin()}) — it mints a one-time
-  // nonce cookie and must run only at the moment of navigation.
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("Tous");
+  const [liked, setLiked] = useState<number[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [cart, setCart] = useState(0);
+  const filtered = useMemo(() => events.filter((event) => {
+    const matchesQuery = `${event.title} ${event.venue} ${event.category}`.toLowerCase().includes(query.toLowerCase());
+    return matchesQuery && (category === "Tous" || event.category === category);
+  }), [query, category]);
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+  const toggleLike = (id: number) => setLiked((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  const addToCart = (event: string) => { setCart((count) => count + 1); toast.success(`${event} ajouté à votre sélection`, { description: "Vous pourrez finaliser votre réservation en quelques clics." }); };
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
-      </main>
-    </div>
-  );
+  return <div className="min-h-screen overflow-x-hidden bg-[#fbfaff]">
+    <header className="absolute inset-x-0 top-0 z-30 border-b border-white/10 text-white">
+      <div className="container flex h-[78px] items-center justify-between">
+        <Link href="/" className="flex items-center gap-3 text-lg font-bold tracking-tight"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#ffd76a] text-xl text-[#2d155e] shadow-lg shadow-black/10"><Ticket size={21} strokeWidth={2.5}/></span><span>Ticket<span className="text-[#ffd76a]">Flow</span><small className="ml-1 text-[10px] font-medium uppercase tracking-[.2em] text-white/55">CI</small></span></Link>
+        <nav className="hidden items-center gap-8 text-sm font-medium text-white/80 md:flex"><a href="#events" className="transition hover:text-white">Découvrir</a><a href="#how" className="transition hover:text-white">Comment ça marche</a><a href="#footer" className="transition hover:text-white">À propos</a></nav>
+        <div className="hidden items-center gap-3 sm:flex"><button onClick={() => toast.info("Votre sélection", { description: `${cart} billet${cart > 1 ? "s" : ""} en attente.` })} className="relative rounded-full p-2 text-white/80 transition hover:bg-white/10 hover:text-white"><Ticket size={20}/>{cart > 0 && <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[#ffd76a] px-1 text-[10px] font-bold text-[#2d155e]">{cart}</span>}</button><Link href="/connexion"><Button className="rounded-full bg-white px-5 text-sm font-bold text-[#4b248a] shadow-none hover:bg-[#ffd76a]">Se connecter</Button></Link></div>
+        <button aria-label="Ouvrir le menu" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-2 sm:hidden">{menuOpen ? <X/> : <Menu/>}</button>
+      </div>
+      {menuOpen && <div className="border-t border-white/15 bg-[#2c155c] px-5 py-5 sm:hidden"><nav className="flex flex-col gap-4 text-sm"><a href="#events" onClick={() => setMenuOpen(false)}>Découvrir</a><a href="#how" onClick={() => setMenuOpen(false)}>Comment ça marche</a><Link href="/connexion">Se connecter</Link></nav></div>}
+    </header>
+
+    <main>
+      <section style={{ background: "linear-gradient(120deg, #281052 0%, #54249c 56%, #8e53dc 100%)" }} className="hero-pattern relative overflow-hidden pb-28 pt-36 text-white md:pb-36 md:pt-44">
+        <div className="absolute -right-32 top-10 h-80 w-80 rounded-full bg-[#ffd76a]/10 blur-3xl"/><div className="absolute -bottom-40 left-1/3 h-96 w-96 rounded-full bg-[#d6b9ff]/15 blur-3xl"/>
+        <div className="container relative grid items-center gap-12 lg:grid-cols-[1.1fr_.9fr]">
+          <div className="max-w-2xl"><Badge className="mb-6 border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-[#ffe18c] backdrop-blur"><Sparkles size={13} className="mr-2"/> L’expérience événementielle réinventée</Badge><h1 className="text-balance text-5xl font-extrabold leading-[1.04] tracking-[-.06em] md:text-7xl">Vos sorties<br/><span className="text-[#ffd76a]">commencent ici.</span></h1><p className="mt-6 max-w-lg text-base leading-7 text-white/72 md:text-lg">Concerts, festivals, spectacles et rendez-vous à Abidjan : trouvez votre prochaine expérience et réservez en quelques clics.</p>
+            <div className="mt-9 flex flex-wrap gap-3 text-sm text-white/75"><span className="flex items-center gap-2"><ShieldCheck size={17} className="text-[#ffd76a]"/> Paiement sécurisé</span><span className="flex items-center gap-2"><Ticket size={17} className="text-[#ffd76a]"/> Billet digital instantané</span></div>
+          </div>
+          <div className="relative hidden h-72 lg:block"><div className="absolute right-3 top-2 h-60 w-72 rotate-[-7deg] rounded-[28px] bg-[#ffd76a] p-5 text-[#2d155e] shadow-2xl shadow-black/25"><div className="flex items-start justify-between"><span className="rounded-full bg-[#2d155e]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest">À l’affiche</span><Ticket size={22}/></div><div className="mt-14 text-3xl font-extrabold">Live<br/>Abidjan</div><div className="mt-5 border-t border-[#2d155e]/15 pt-3 text-xs font-bold tracking-wide">14 SEPT. 2026 · 19:00</div></div><div className="absolute bottom-0 left-5 h-56 w-64 rotate-[9deg] rounded-[28px] bg-white/10 p-5 backdrop-blur-sm"><div className="h-full rounded-2xl border border-dashed border-white/30 p-4"><div className="flex justify-between text-xs text-white/65"><span>TICKETFLOW</span><span>ABJ</span></div><div className="mt-16 text-2xl font-bold">Votre soirée<br/>vous attend.</div></div></div></div>
+        </div>
+        <div className="container relative mt-14"><div className="soft-shadow flex flex-col gap-3 rounded-2xl bg-white p-3 text-[#281052] sm:flex-row sm:items-center"><div className="flex flex-1 items-center gap-3 rounded-xl px-3"><Search size={20} className="text-[#7146c9]"/><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Rechercher un événement, un lieu..." className="border-0 bg-transparent px-0 shadow-none outline-none focus-visible:ring-0"/></div><div className="hidden h-8 w-px bg-slate-200 sm:block"/><div className="flex items-center gap-2 px-3 text-sm text-slate-500"><MapPin size={17} className="text-[#7146c9]"/><span>Abidjan</span></div><Button onClick={() => document.getElementById("events")?.scrollIntoView({ behavior: "smooth" })} className="h-12 rounded-xl bg-[#5d2db6] px-7 font-bold hover:bg-[#43218d]">Rechercher</Button></div></div>
+      </section>
+
+      <section id="events" className="container py-20 md:py-28"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="mb-3 text-xs font-bold uppercase tracking-[.22em] text-[#7b42dc]">À l’affiche</p><h2 className="text-3xl font-extrabold text-[#24114b] md:text-4xl">Les prochains rendez-vous</h2><p className="mt-3 text-slate-500">Des expériences choisies pour vous faire vibrer.</p></div><Link href="/evenements" className="flex items-center gap-1 text-sm font-bold text-[#5d2db6] hover:underline">Voir tous les événements <ChevronRight size={17}/></Link></div>
+        <div className="mt-8 flex gap-2 overflow-x-auto pb-2">{categories.map((item) => <button key={item} onClick={() => setCategory(item)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition ${category === item ? "bg-[#5d2db6] text-white shadow-lg shadow-[#5d2db6]/20" : "bg-white text-slate-500 ring-1 ring-slate-200 hover:ring-[#7b42dc]"}`}>{item}</button>)}</div>
+        {filtered.length === 0 ? <div className="mt-10 rounded-2xl border border-dashed border-[#d9cef4] bg-white p-12 text-center"><Search className="mx-auto mb-3 text-[#7b42dc]"/><p className="font-bold text-[#24114b]">Aucun événement trouvé</p><p className="mt-1 text-sm text-slate-500">Essayez une autre recherche ou catégorie.</p></div> : <div className="mt-7 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{filtered.map((event) => <article key={event.id} className="group overflow-hidden rounded-2xl bg-white shadow-[0_10px_35px_rgba(45,20,88,.07)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(45,20,88,.13)]"><div className={`relative h-48 bg-gradient-to-br ${event.color} p-5 text-white`}><div className="flex items-start justify-between"><span className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold backdrop-blur">{event.category}</span><button aria-label="Ajouter aux favoris" onClick={() => toggleLike(event.id)} className="rounded-full bg-black/10 p-2 backdrop-blur transition hover:bg-white/20"> <Heart size={17} fill={liked.includes(event.id) ? "#ffd76a" : "none"} color={liked.includes(event.id) ? "#ffd76a" : "white"}/></button></div><span className="absolute bottom-5 left-5 text-5xl font-extrabold opacity-90">{event.icon}</span><div className="absolute bottom-5 right-5 rounded-xl bg-white px-3 py-2 text-center text-[#32126a] shadow-lg"><strong className="block text-2xl leading-6">{event.day}</strong><span className="text-[10px] font-bold tracking-widest">{event.month}</span></div></div><div className="p-5"><h3 className="text-xl font-extrabold text-[#24114b]">{event.title}</h3><p className="mt-2 min-h-10 text-sm leading-5 text-slate-500">{event.description}</p><div className="mt-4 flex items-center gap-4 text-xs text-slate-500"><span className="flex items-center gap-1.5"><MapPin size={14} className="text-[#7b42dc]"/>{event.venue}</span><span className="flex items-center gap-1.5"><Clock3 size={14} className="text-[#7b42dc]"/>{event.time}</span></div><div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"><div><span className="block text-[11px] text-slate-400">À partir de</span><strong className="text-lg text-[#5d2db6]">{event.price}</strong></div><Button onClick={() => addToCart(event.title)} size="sm" className="rounded-lg bg-[#5d2db6] font-bold hover:bg-[#43218d]">Choisir <Ticket size={15} className="ml-1.5"/></Button></div></div></article>)}</div>}
+      </section>
+
+      <section id="how" className="bg-[#f0eaff] py-20 md:py-24"><div className="container"><div className="mx-auto max-w-xl text-center"><p className="mb-3 text-xs font-bold uppercase tracking-[.22em] text-[#7b42dc]">Simple comme bonjour</p><h2 className="text-3xl font-extrabold text-[#24114b] md:text-4xl">Votre billet, en trois étapes</h2></div><div className="mt-12 grid gap-5 md:grid-cols-3"><div className="rounded-2xl bg-white p-7"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#5d2db6] text-lg font-extrabold text-white">01</span><h3 className="mt-6 text-xl font-bold text-[#24114b]">Trouvez votre expérience</h3><p className="mt-2 text-sm leading-6 text-slate-500">Explorez les événements qui font vibrer Abidjan et choisissez celui qui vous ressemble.</p></div><div className="rounded-2xl bg-white p-7"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#ffd76a] text-lg font-extrabold text-[#2d155e]">02</span><h3 className="mt-6 text-xl font-bold text-[#24114b]">Réservez en confiance</h3><p className="mt-2 text-sm leading-6 text-slate-500">Sélectionnez vos billets et payez simplement grâce à un parcours sécurisé.</p></div><div className="rounded-2xl bg-white p-7"><span className="grid h-11 w-11 place-items-center rounded-xl bg-[#d9c7ff] text-lg font-extrabold text-[#4b248a]">03</span><h3 className="mt-6 text-xl font-bold text-[#24114b]">Vivez le moment</h3><p className="mt-2 text-sm leading-6 text-slate-500">Recevez votre billet numérique instantanément et présentez-le à l’entrée.</p></div></div></div></section>
+    </main>
+    <footer id="footer" className="bg-[#24114b] py-10 text-white"><div className="container flex flex-col justify-between gap-7 md:flex-row md:items-center"><div><div className="flex items-center gap-2 font-bold"><span className="grid h-8 w-8 place-items-center rounded-lg bg-[#ffd76a] text-[#2d155e]"><Ticket size={17}/></span> Ticket<span className="text-[#ffd76a]">Flow</span> CI</div><p className="mt-3 text-sm text-white/55">Billetterie simple, locale et sécurisée.</p></div><div className="flex flex-wrap gap-5 text-sm text-white/60"><a href="#events" className="hover:text-white">Événements</a><a href="#how" className="hover:text-white">Comment ça marche</a><Link href="/devenir-promoteur" className="hover:text-white">Devenir promoteur</Link><Link href="/connexion" className="hover:text-white">Connexion</Link></div><p className="text-xs text-white/35">© 2026 TicketFlow CI</p></div></footer>
+  </div>;
 }

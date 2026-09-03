@@ -1,42 +1,28 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
-import ErrorBoundary from "./components/ErrorBoundary";
+import { Route, Switch, Link, useLocation } from "wouter";
+import { BarChart3, Bell, ClipboardCheck, LayoutDashboard, LogOut, Menu, Settings, Ticket, Users, WalletCards } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Home from "./pages/Home";
+import { useState } from "react";
+import { toast } from "sonner";
 
-function Router() {
-  // make sure to consider if you need authentication for certain routes
-  return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
-  );
+const roleContent = {
+  client: { label: "Espace client", title: "Votre prochaine expérience commence ici", subtitle: "Retrouvez vos commandes, billets et réclamations au même endroit.", stats: [["Billets actifs", "03", "+1 ce mois"], ["Commandes", "08", "Depuis votre inscription"], ["Favoris", "06", "Événements suivis"]], icon: Ticket, items: ["Vue d’ensemble", "Mes billets", "Mes commandes", "Réclamations"] },
+  promoter: { label: "Espace promoteur", title: "Pilotez vos événements avec sérénité", subtitle: "Publiez, vendez et mesurez l’impact de vos expériences.", stats: [["Ventes du mois", "1 248 000 F", "+18,4%"], ["Événements actifs", "04", "2 à venir"], ["Solde disponible", "680 500 F", "Retrait disponible"]], icon: BarChart3, items: ["Vue d’ensemble", "Mes événements", "Types de billets", "Mes ventes", "Retraits"] },
+  agent: { label: "Espace agent", title: "Contrôlez les accès en toute simplicité", subtitle: "Vérifiez les billets et gardez une trace de chaque passage.", stats: [["Contrôles aujourd’hui", "386", "+42 depuis hier"], ["Billets valides", "98,7%", "Taux de validation"], ["Événements assignés", "03", "Cette semaine"]], icon: ClipboardCheck, items: ["Vue d’ensemble", "Vérifier un billet", "Historique des contrôles"] },
+  admin: { label: "Administration", title: "Une vision claire de votre plateforme", subtitle: "Supervisez les utilisateurs, événements, tickets et opérations métier.", stats: [["Utilisateurs", "12 480", "+6,2% ce mois"], ["Événements publiés", "248", "19 en attente"], ["Volume traité", "48,6 M F", "+12,8%"]], icon: Users, items: ["Vue d’ensemble", "Utilisateurs", "Événements", "Commandes & tickets", "Demandes", "Réclamations"] },
+} as const;
+
+type Role = keyof typeof roleContent;
+
+function Dashboard({ role = "client" as Role }: { role?: Role }) {
+  const [location] = useLocation(); const [open, setOpen] = useState(false); const config = roleContent[role]; const Icon = config.icon;
+  return <div className="min-h-screen bg-[#f8f7fc] text-[#24114b]"><aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-[#24114b] p-5 text-white transition-transform md:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}><div className="flex items-center justify-between"><Link href="/" className="flex items-center gap-2 text-lg font-bold"><span className="grid h-9 w-9 place-items-center rounded-xl bg-[#ffd76a] text-[#2d155e]"><Ticket size={18}/></span>Ticket<span className="text-[#ffd76a]">Flow</span></Link><button className="md:hidden" onClick={() => setOpen(false)}>×</button></div><div className="mt-12 rounded-2xl bg-white/10 p-4"><div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-full bg-[#ffd76a] font-bold text-[#2d155e]">AM</div><div><p className="text-sm font-bold">Aminata Kouassi</p><p className="text-xs text-white/50">{config.label}</p></div></div></div><nav className="mt-7 space-y-1">{config.items.map((item, index) => <button key={item} onClick={() => toast.info(item, { description: index === 0 ? "Vous êtes sur votre tableau de bord." : "Ce module est prêt à être connecté à vos données." })} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition ${index === 0 ? "bg-white/12 text-white" : "text-white/60 hover:bg-white/8 hover:text-white"}`}>{index === 0 ? <LayoutDashboard size={17}/> : index === 1 ? <Ticket size={17}/> : index === 2 ? <WalletCards size={17}/> : <Settings size={17}/>} {item}</button>)}</nav><div className="absolute inset-x-5 bottom-6"><button onClick={() => toast.info("Déconnexion", { description: "La session sera fermée dans la prochaine version connectée." })} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-white/55 hover:bg-white/8 hover:text-white"><LogOut size={17}/> Se déconnecter</button></div></aside><div className="md:pl-72"><header className="sticky top-0 z-20 flex h-[74px] items-center justify-between border-b border-slate-200/80 bg-white/85 px-5 backdrop-blur md:px-9"><button className="rounded-lg p-2 md:hidden" onClick={() => setOpen(true)}><Menu size={21}/></button><div className="hidden md:block"><p className="text-xs font-semibold uppercase tracking-[.18em] text-[#8d7faa]">{config.label}</p><p className="mt-1 text-sm font-medium text-slate-500">Mardi 03 septembre 2026</p></div><div className="flex items-center gap-3"><button onClick={() => toast.info("Vous êtes à jour", { description: "Aucune nouvelle notification." })} className="relative rounded-xl p-2.5 text-slate-500 hover:bg-[#f0eaff]"><Bell size={19}/><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[#e65c70]"/></button><div className="hidden h-8 w-px bg-slate-200 sm:block"/><div className="grid h-9 w-9 place-items-center rounded-full bg-[#e8ddff] text-xs font-bold text-[#5d2db6]">AK</div></div></header><main className="p-5 md:p-9"><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><p className="text-sm font-bold text-[#7b42dc]">Bonjour Aminata,</p><h1 className="mt-2 max-w-2xl text-3xl font-extrabold leading-tight md:text-4xl">{config.title}</h1><p className="mt-3 text-sm text-slate-500">{config.subtitle}</p></div><Button onClick={() => toast.success("Action enregistrée", { description: "Le module sera synchronisé avec le backend." })} className="w-fit rounded-xl bg-[#5d2db6] font-bold hover:bg-[#43218d]"><Icon size={17} className="mr-2"/> Action rapide</Button></div><div className="mt-9 grid gap-4 md:grid-cols-3">{config.stats.map(([label, value, trend], index) => <div key={label} className="rounded-2xl bg-white p-5 shadow-[0_8px_25px_rgba(45,20,88,.05)] ring-1 ring-slate-100"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">{label}</span><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${index === 1 ? "bg-[#fff3cd] text-[#9b7400]" : "bg-[#eaf8ef] text-[#26814a]"}`}>{index === 1 && role === "admin" ? "À traiter" : "+" + (index + 2) + "%"}</span></div><p className="mt-5 text-3xl font-extrabold tracking-tight">{value}</p><p className="mt-1 text-xs text-slate-400">{trend}</p></div>)}</div><div className="mt-6 grid gap-6 lg:grid-cols-[1.35fr_.65fr]"><section className="rounded-2xl bg-white p-6 shadow-[0_8px_25px_rgba(45,20,88,.05)] ring-1 ring-slate-100"><div className="flex items-center justify-between"><div><h2 className="font-bold">Activité récente</h2><p className="mt-1 text-xs text-slate-400">Suivi des dernières opérations</p></div><button onClick={() => toast.info("Historique complet", { description: "La vue détaillée sera disponible prochainement." })} className="text-xs font-bold text-[#5d2db6]">Tout voir</button></div><div className="mt-6 space-y-4">{["Nouvelle commande #TF-2048", "Événement validé · Abidjan Music Live", "Billet contrôlé · Festival des Talents", "Demande de retrait reçue"].map((item, index) => <div key={item} className="flex items-center gap-3 border-b border-slate-100 pb-4 last:border-0 last:pb-0"><span className={`grid h-9 w-9 place-items-center rounded-xl ${index % 2 ? "bg-[#fff4d4] text-[#b27c00]" : "bg-[#f0eaff] text-[#6b3bc0]"}`}><ClipboardCheck size={16}/></span><div className="flex-1"><p className="text-sm font-semibold">{item}</p><p className="mt-1 text-xs text-slate-400">Il y a {index + 1} h</p></div><span className="text-xs font-bold text-[#3aa16a]">Terminé</span></div>)}</div></section><section className="rounded-2xl bg-[#5d2db6] p-6 text-white shadow-[0_12px_35px_rgba(93,45,182,.24)]"><div className="flex items-center gap-2 text-[#ffd76a]"><SparkleIcon/><span className="text-xs font-bold uppercase tracking-[.16em]">À retenir</span></div><h2 className="mt-6 text-2xl font-extrabold">Tout est sous contrôle.</h2><p className="mt-3 text-sm leading-6 text-white/65">Suivez vos opérations et concentrez-vous sur l’essentiel : créer des expériences mémorables.</p><div className="mt-8 rounded-xl bg-white/10 p-4"><div className="flex justify-between text-xs"><span className="text-white/60">Performance globale</span><strong>86%</strong></div><div className="mt-3 h-2 rounded-full bg-white/15"><div className="h-full w-[86%] rounded-full bg-[#ffd76a]"/></div></div></section></div></main></div></div>;
 }
-
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
-function App() {
-  return (
-    <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  );
-}
-
+function SparkleIcon() { return <span className="text-lg">✦</span>; }
+function AuthPage() { const [, navigate] = useLocation(); return <div className="grid min-h-screen place-items-center bg-[#f0eaff] p-5"><div className="grid w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl md:grid-cols-2"><div className="hidden bg-[linear-gradient(140deg,#281052,#7b42dc)] p-10 text-white md:block"><Link href="/" className="font-bold">Ticket<span className="text-[#ffd76a]">Flow</span> CI</Link><div className="mt-28"><h1 className="text-4xl font-extrabold leading-tight">Le monde<br/>des expériences<br/><span className="text-[#ffd76a]">vous attend.</span></h1><p className="mt-5 max-w-xs text-sm leading-6 text-white/65">Accédez à vos billets et suivez vos événements depuis un seul espace.</p></div></div><div className="p-7 sm:p-10"><Link href="/" className="text-sm font-bold text-[#5d2db6]">← Retour à l’accueil</Link><h2 className="mt-14 text-3xl font-extrabold">Bienvenue à nouveau</h2><p className="mt-2 text-sm text-slate-500">Connectez-vous pour continuer votre expérience.</p><div className="mt-8 space-y-4"><input className="h-12 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-[#7b42dc]" placeholder="Votre adresse email"/><input className="h-12 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-[#7b42dc]" placeholder="Votre mot de passe" type="password"/><Button onClick={() => { toast.success("Connexion simulée", { description: "Bienvenue dans votre espace client." }); navigate("/espace-client"); }} className="h-12 w-full rounded-xl bg-[#5d2db6] font-bold hover:bg-[#43218d]">Se connecter</Button></div><p className="mt-7 text-center text-sm text-slate-500">Pas encore de compte ? <button onClick={() => toast.info("Inscription", { description: "Le formulaire d’inscription sera bientôt disponible." })} className="font-bold text-[#5d2db6]">Créer un compte</button></p></div></div></div> }
+function App() { return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Toaster/><Switch><Route path="/" component={Home}/><Route path="/connexion" component={AuthPage}/><Route path="/espace-client"><Dashboard role="client"/></Route><Route path="/promoteur"><Dashboard role="promoter"/></Route><Route path="/agent"><Dashboard role="agent"/></Route><Route path="/admin"><Dashboard role="admin"/></Route><Route component={Home}/></Switch></TooltipProvider></ThemeProvider></ErrorBoundary>; }
 export default App;
