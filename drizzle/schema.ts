@@ -7,6 +7,12 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["client", "promoter", "agent", "admin"]).default("client").notNull(),
+  passwordHash: text("passwordHash"),
+  status: mysqlEnum("status", ["actif", "inactif", "en_attente", "suspendu_temp", "suspendu_def"]).default("actif").notNull(),
+  profileId: int("profileId"),
+  isSuperAdmin: boolean("isSuperAdmin").default(false).notNull(),
+  resetTokenHash: varchar("resetTokenHash", { length: 128 }),
+  resetExpiresAt: timestamp("resetExpiresAt"),
   phone: varchar("phone", { length: 32 }),
   avatarUrl: text("avatarUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -134,3 +140,22 @@ export const votes = mysqlTable("event_votes", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+export const profiles = mysqlTable("profiles", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  isSystem: boolean("isSystem").default(false).notNull(),
+});
+
+export const permissions = mysqlTable("permissions", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 100 }).notNull().unique(),
+  name: varchar("name", { length: 160 }).notNull(),
+  category: varchar("category", { length: 80 }).notNull(),
+});
+
+export const profilePermissions = mysqlTable("profile_permissions", {
+  profileId: int("profileId").notNull(),
+  permissionId: int("permissionId").notNull(),
+});

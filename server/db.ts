@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { claims, events, orders, tickets, users, type InsertUser } from "../drizzle/schema";
+import { claims, events, orders, permissions, profilePermissions, tickets, users, type InsertUser } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -8,6 +8,12 @@ export async function getDb() { if (!_db && process.env.DATABASE_URL) { try { _d
 
 export async function upsertUser(user: InsertUser): Promise<void> { if (!user.openId) throw new Error("User openId is required for upsert"); const db = await getDb(); if (!db) return; const values: InsertUser = { openId: user.openId }; const updateSet: Record<string, unknown> = {}; for (const field of ["name", "email", "loginMethod", "phone", "avatarUrl"] as const) { if (user[field] !== undefined) { values[field] = user[field] ?? null; updateSet[field] = user[field] ?? null; } } if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; } if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; } else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; } if (!values.lastSignedIn) values.lastSignedIn = new Date(); if (!Object.keys(updateSet).length) updateSet.lastSignedIn = new Date(); await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet }); }
 export async function getUserByOpenId(openId: string) { const db = await getDb(); if (!db) return undefined; const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1); return result[0]; }
+export async function getUserByEmail(email: string) { const db = await getDb(); if (!db) return undefined; const result = await db.select().from(users).where(eq(users.email, email)).limit(1); return result[0]; }
+export async function getUserById(id: number) { const db = await getDb(); if (!db) return undefined; const result = await db.select().from(users).where(eq(users.id, id)).limit(1); return result[0]; }
+export async function createLocalUser(input: { name: string; email: string; passwordHash: string; phone?: string }) { const db = await getDb(); if (!db) throw new Error("Database unavailable"); const openId = `local_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`; const result = await db.insert(users).values({ openId, name: input.name, email: input.email, passwordHash: input.passwordHash, phone: input.phone, loginMethod: "local", role: "client", status: "actif" }); return { insertId: result[0].insertId, openId }; }
+export async function updateUserLastSignedIn(id: number) { const db = await getDb(); if (!db) return; await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, id)); }
+export async function getUserPermissionCodes(userId: number) { const db = await getDb(); if (!db) return []; const user = await getUserById(userId); if (!user) return []; if (user.isSuperAdmin) { const rows = await db.select({ code: permissions.code }).from(permissions); return rows.map((row) => row.code); } if (!user.profileId) return []; const rows = await db.select({ code: permissions.code }).from(profilePermissions).innerJoin(permissions, eq(profilePermissions.permissionId, permissions.id)).where(eq(profilePermissions.profileId, user.profileId)); return rows.map((row) => row.code); }
+export async function hasPermission(userId: number, code: string) { return (await getUserPermissionCodes(userId)).includes(code); }
 
 export async function listPublishedEvents() { const db = await getDb(); if (!db) return []; return db.select().from(events).where(eq(events.status, "published")).orderBy(desc(events.eventDate)); }
 export async function createEventRecord(input: typeof events.$inferInsert) { const db = await getDb(); if (!db) throw new Error("Database unavailable"); return db.insert(events).values(input); }
