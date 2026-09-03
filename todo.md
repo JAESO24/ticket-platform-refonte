@@ -35,3 +35,9 @@
 - [x] Ajouter les tests Vitest de hachage, session signée, déconnexion et permissions par rôle.
 - [x] Vérifier les parcours d’accès avec états de traitement, erreur, succès et redirection pour accès non autorisé ; contrôle mobile/desktop effectué sur les shells.
 - [x] Créer un nouveau checkpoint après validation de l’extension d’authentification.
+
+## CTA Devenir promoteur
+
+- [x] Réintégrer le lien « Devenir promoteur » dans la navigation supérieure desktop et mobile.
+- [x] Créer un parcours dédié de demande promoteur avec critères visibles, score d’éligibilité initial et soumission protégée.
+- [x] Vérifier le rendu responsive du CTA et de la page dédiée en desktop et mobile, puis créer un checkpoint de mise à jour.
